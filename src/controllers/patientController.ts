@@ -1,6 +1,10 @@
 import patientModel from "../models/patientModel.js";
 import { Request, Response } from "express";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 export const createPatient = async(req: Request, res: Response) => {
     try{
@@ -27,4 +31,32 @@ export const createPatient = async(req: Request, res: Response) => {
         console.error("An error has occured", error)
         return res.status(500).json({message: "internal server error"})
     }
+}
+
+// login
+export const loginPatient = async(req: Request, res: Response)=> {
+    try{
+        const {email, password} = req.body;
+    const patientexists = await patientModel.findOne({email});
+    if(!patientexists){
+        return res.status(401).json({message: "This patient does not exist in our system"})
+    }
+    const matchPassword = await bcrypt.compare(password, patientexists.password);
+    if(!matchPassword){
+        return res.status(401).json({message: "Invalid credentials"})
+    }
+    const jwtToken = jwt.sign({
+        name:patientexists.name,
+        emai:patientexists.email,
+        role:patientexists.role
+    },
+    process.env.PRIVATE_KEY as string,
+    {expiresIn: "1d"}
+    )
+
+    return res.status(200).json({message: "login successful", jwtToken})
+    }
+    catch (error){
+        return res.status(500).json({message: "Internal server Error"})
+    } 
 }

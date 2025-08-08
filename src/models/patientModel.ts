@@ -20,8 +20,7 @@ const patientSchema = new mongoose.Schema ({
     age: {type: Number,required: true},
     gender: {type: String,required: true,enum: ["Male", "Female"]},
     address: {type: String,required: true},
-    // mrNumber: {type: String,required: true,unique: true},
-    role: {type: String,enum: ["admin", "patient"], default: "patient" },
+    role: {type: String, default: "patient" },
     image: {type: String}
 })
 
