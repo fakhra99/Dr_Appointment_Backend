@@ -24,7 +24,7 @@ const doctorSchema = new mongoose.Schema ({
     age: {type: Number,required: true},
     gender: {type: String,required: true,enum: ["Male", "Female"]},
     address: {type: String,required: true},
-    role: {type: String, default: "doctor" },
+    role: {type: String, default: "Doctor" },
     image: {type: String},
     specialization: { type: String, required: true },
     degree: { type: String, required: true },

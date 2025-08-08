@@ -47,7 +47,7 @@ export const loginPatient = async(req: Request, res: Response)=> {
     }
     const jwtToken = jwt.sign({
         name:patientexists.name,
-        emai:patientexists.email,
+        emaii:patientexists.email,
         role:patientexists.role
     },
     process.env.PRIVATE_KEY as string,
