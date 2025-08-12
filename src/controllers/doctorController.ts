@@ -3,6 +3,7 @@ import { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
+import { sendOtp, verifyOtp, resetPassword } from "../services/authService.js"
 
 dotenv.config();
 
@@ -64,4 +65,30 @@ const {email, password} = req.body;
         return res.status(500).json({message: "Internal server error", error})
     }
 }
-    
+
+
+export const doctorForgetPassword = async (req: Request, res: Response) => {
+  const { email } = req.body;
+  const doctor = await doctorModel.findOne({ email });
+  if (!doctor) return res.status(404).json({ message: "Doctor not found" });
+
+  await sendOtp(email);
+  res.status(200).json({ message: "OTP sent to email" });
+};
+
+export const doctorVerifyOtp = async (req: Request, res: Response) => {
+  const { email, otp } = req.body;
+  const valid = await verifyOtp(email, otp);
+  if (!valid) return res.status(400).json({ message: "Invalid or expired OTP" });
+
+  res.status(200).json({ message: "OTP verified" });
+};
+
+export const doctorResetPassword = async (req: Request, res: Response) => {
+  const { email, otp, newPassword } = req.body;
+  const valid = await verifyOtp(email, otp);
+  if (!valid) return res.status(400).json({ message: "Invalid or expired OTP" });
+
+  await resetPassword(email, newPassword, doctorModel);
+  res.status(200).json({ message: "Password reset successful" });
+};
