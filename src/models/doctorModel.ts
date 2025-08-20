@@ -3,7 +3,9 @@ import mongoose, {Document} from "mongoose";
 export interface IDoctor extends Document {
     name: string,
     email: string,
-    password: string,
+    password?: string,
+    googleId?: string,
+    loginType?: "local" | "google",
     phone: string,
     age: number,
     gender:string,
@@ -19,7 +21,12 @@ export interface IDoctor extends Document {
 const doctorSchema = new mongoose.Schema ({
     name: {type: String,required: true},
     email: {type: String,required: true,unique: true},
-    password: {type: String,required: true},
+    password: {type: String,required: function (this: IDoctor) {
+            return !this.googleId; // required only if not using google login
+        }
+    },
+    googleId: { type: String, required: false, unique: true }, // <-- added
+    loginType: { type: String, enum: ["local", "google"], default: "local" },
     phone: {type: String,required: true,},
     age: {type: Number,required: true},
     gender: {type: String,required: true,enum: ["Male", "Female"]},

@@ -7,7 +7,7 @@ export const generateOtp = () => Math.floor(1000 + Math.random() * 9000).toStrin
 
 export const sendOtp = async (email: string) => {
   const otp = generateOtp();
-  const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // expires in 10 mins
+   const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
 
   await Otp.findOneAndUpdate(
     { email },

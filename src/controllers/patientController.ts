@@ -4,6 +4,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import { sendOtp, verifyOtp, resetPassword } from "../services/authService.js";
+import { verifyGoogleToken, findOrCreateUserFromGoogle, generateAppJwt } from "../services/googleAuthService.js";
 
 dotenv.config();
 
@@ -23,7 +24,7 @@ export const createPatient = async(req: Request, res: Response) => {
         }
 
         const hashedPassword = await bcrypt.hash(password, 10)
-        const newPatient = new patientModel({name, email, password: hashedPassword, confirmPassword, phone, age, gender, address, role, image})
+        const newPatient = new patientModel({name, email, password: hashedPassword, phone, age, gender, address, role, image})
         await newPatient.save()
 
         return res.status(200).json({message: "Patient data saved successfully", newPatient})
@@ -48,7 +49,7 @@ export const loginPatient = async(req: Request, res: Response)=> {
     }
     const jwtToken = jwt.sign({
         name:patientexists.name,
-        emaii:patientexists.email,
+        email:patientexists.email,
         role:patientexists.role
     },
     process.env.PRIVATE_KEY as string,
@@ -90,3 +91,16 @@ export const patientResetPassword = async (req: Request, res: Response) => {
   await resetPassword(email, newPassword, patientModel);
   res.status(200).json({ message: "Password reset successful" });
 };
+
+// Google Login for Patient
+export const googleLoginPatient = async (req: Request, res: Response) => {
+  try {
+    const { idToken } = req.body; // from frontend
+    const payload = await verifyGoogleToken(idToken);
+    const user = await findOrCreateUserFromGoogle(payload, "patient");
+    const token = generateAppJwt(user);
+    res.status(200).json({ message: "Google login successful", token });
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+}

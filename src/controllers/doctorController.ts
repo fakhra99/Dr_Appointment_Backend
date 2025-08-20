@@ -3,7 +3,8 @@ import { Request, Response } from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
-import { sendOtp, verifyOtp, resetPassword } from "../services/authService.js"
+import { sendOtp, verifyOtp, resetPassword } from "../services/authService.js";
+import { verifyGoogleToken, findOrCreateUserFromGoogle, generateAppJwt } from "../services/googleAuthService.js";
 
 dotenv.config();
 
@@ -26,7 +27,7 @@ export const createDoctor = async(req: Request, res: Response)=> {
     }
 
     const hashPassword = await bcrypt.hash(password, 10);
-    const newDoctor = new doctorModel({name, email, password: hashPassword, confirmPassword, phone, age, gender, address, role, image,specialization, degree, experience, availability })
+    const newDoctor = new doctorModel({name, email, password: hashPassword, phone, age, gender, address, role, image,specialization, degree, experience, availability })
 
      await newDoctor.save()
 
@@ -39,33 +40,43 @@ export const createDoctor = async(req: Request, res: Response)=> {
 }
 
 // login doctor
-export const loginDoctor = async(req: Request, res: Response)=> {
-    try{
-const {email, password} = req.body;
-    const existingDoctor = await doctorModel.findOne({email});
-    if(!existingDoctor){
-        return res.status(401).json({message: "This user does not exist in our system"})
-    }
-    const matchPassword = await bcrypt.compare(password, existingDoctor.password);
-    if(!matchPassword){
-        return res.status(401).json({message: "Password do not match"})
+export const loginDoctor = async (req: Request, res: Response) => {
+  try {
+    const { email, password } = req.body;
+
+    const existingDoctor = await doctorModel.findOne({ email });
+
+    if (!existingDoctor) {
+      return res.status(401).json({ message: "The email does not exist" });
     }
 
-    const jwtToken = jwt.sign({
+    // Ensure account is a "local" login
+    if (!existingDoctor.password) {
+      return res.status(400).json({
+        message: "This account was created with Google. Please use Google login."
+      });
+    }
+
+    const matchPassword = await bcrypt.compare(password, existingDoctor.password);
+    if (!matchPassword) {
+      return res.status(401).json({ message: "Password does not match" });
+    }
+
+    const jwtToken = jwt.sign(
+      {
         name: existingDoctor.name,
         email: existingDoctor.email,
-        role: existingDoctor.role
-    },
-    process.env.PRIVATE_KEY as string,
-    {expiresIn: "1d"})
+        role: existingDoctor.role,
+      },
+      process.env.PRIVATE_KEY as string,
+      { expiresIn: "1d" }
+    );
 
-    return res.status(200).json({message: "Login successful", jwtToken})
-    }
-    catch(error){
-        return res.status(500).json({message: "Internal server error", error})
-    }
-}
-
+    return res.status(200).json({ message: "Login successful", jwtToken });
+  } catch (error) {
+    return res.status(500).json({ message: "Internal server error", error });
+  }
+};
 
 export const doctorForgetPassword = async (req: Request, res: Response) => {
   const { email } = req.body;
@@ -91,4 +102,17 @@ export const doctorResetPassword = async (req: Request, res: Response) => {
 
   await resetPassword(email, newPassword, doctorModel);
   res.status(200).json({ message: "Password reset successful" });
+};
+
+// Google Login for Doctor
+export const googleLoginDoctor = async (req: Request, res: Response) => {
+  try {
+    const { idToken } = req.body; // from frontend
+    const payload = await verifyGoogleToken(idToken);
+    const user = await findOrCreateUserFromGoogle(payload, "doctor");
+    const token = generateAppJwt(user);
+    res.status(200).json({ message: "Google login successful", token })
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
 };
