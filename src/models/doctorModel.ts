@@ -27,15 +27,15 @@ const doctorSchema = new mongoose.Schema ({
     },
     googleId: { type: String, required: false, unique: true }, // <-- added
     loginType: { type: String, enum: ["local", "google"], default: "local" },
-    phone: {type: String,required: true,},
-    age: {type: Number,required: true},
-    gender: {type: String,required: true,enum: ["Male", "Female"]},
-    address: {type: String,required: true},
+    phone: {type: String,required: false,},
+    age: {type: Number,required: false},
+    gender: {type: String,required: false,enum: ["Male", "Female"]},
+    address: {type: String,required: false},
     role: {type: String, default: "Doctor" },
     image: {type: String},
-    specialization: { type: String, required: true },
-    degree: { type: String, required: true },
-    experience: { type: String, required: true },
+    specialization: { type: String, required: false },
+    degree: { type: String, required: false },
+    experience: { type: String, required: false },
     availability: { type: [String], required: false },
 });
 
