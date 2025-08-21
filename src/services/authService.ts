@@ -28,6 +28,12 @@ export const verifyOtp = async (email: string, otp: string) => {
 
 export const resetPassword = async (email: string, newPassword: string, model: any) => {
   const hashed = await bcrypt.hash(newPassword, 10);
-  await model.findOneAndUpdate({ email }, { password: hashed });
-  await Otp.deleteOne({ email });
+  const user = await model.findOneAndUpdate(
+    { email: email.trim().toLowerCase() },
+    { password: hashed },
+    { new: true }
+  );
+  if (!user) throw new Error("User not found");
+  await Otp.deleteOne({ email: email.trim().toLowerCase() });
+  return user;
 };
